@@ -170,7 +170,7 @@ export async function generateAIDescription(
 
     const data = await response.json() as DeepSeekResponse;
     return data.choices?.[0]?.message?.content?.trim() || null;
-  } catch (error) {
+  } catch (_error) {
     clearTimeout(timeoutId);
     return null;
   }

@@ -31,7 +31,7 @@ function ExplorerContent() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New state for last search location (for recenter button)
-  const [lastSearchLocation, setLastSearchLocation] = useState<{ lat: number; lon: number; name: string } | null>(null);
+  const [lastSearchLocation, setLastSearchLocation] = useState<{ lat: number; lon: number; name: string; body: string } | null>(null);
 
   // Search history
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -162,7 +162,8 @@ function ExplorerContent() {
         setLastSearchLocation({
           lat: result.lat,
           lon: result.lon,
-          name: result.feature?.name || query
+          name: result.feature?.name || query,
+          body: result.body
         });
 
         // Save to search history (max 10 items, no duplicates)
@@ -284,7 +285,6 @@ function ExplorerContent() {
       />
 
       {/* Result card overlay */}
-      {showResultCard && console.log('[Explorer] Passing aiDescription to ResultCard:', aiDescription)}
       <ResultCard
         isOpen={showResultCard}
         onClose={() => setShowResultCard(false)}
@@ -303,7 +303,7 @@ function ExplorerContent() {
           <button
             onClick={() => {
               const params = new URLSearchParams();
-              params.append('body', selectedBody);
+              params.append('body', lastSearchLocation.body);
               params.append('lat', lastSearchLocation.lat.toString());
               params.append('lon', lastSearchLocation.lon.toString());
               params.append('zoom', '6');

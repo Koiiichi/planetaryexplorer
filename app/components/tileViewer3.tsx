@@ -764,11 +764,8 @@ export default function TileViewer({
             return;
           }
 
-          const targetPoint = new OSDPoint(targetX, targetY);
-
           // Determine target zoom. Ensure it's significantly zoomed in (at least 8x)
           // or respects the requested zoom if it's higher.
-          const currentZoom = viewer.viewport.getZoom();
           const desiredZoom = initialZoom ? Math.max(initialZoom, 10) : 10;
 
           // Calculate bounds for fitBounds

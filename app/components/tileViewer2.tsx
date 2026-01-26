@@ -83,7 +83,7 @@ const TileViewer = () => {
     return () => {
       newViewer.destroy();
     };
-  }, [isClient, selectedBody, zoomLevel]);
+  }, [isClient, selectedBody, zoomLevel, viewer]);
 
   if (!isClient) return <div>Loading...</div>;
 

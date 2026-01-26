@@ -35,7 +35,7 @@ const descriptionCache = new Map<string, string>();
 
 // Load cache from localStorage on first use
 let cacheLoaded = false;
-function loadCacheFromStorage() {
+function _loadCacheFromStorage() {
   if (cacheLoaded || typeof window === 'undefined') return;
   cacheLoaded = true;
   

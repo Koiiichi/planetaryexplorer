@@ -178,7 +178,7 @@ export default function PhotoSphereGallery() {
     let hoveredSprite: THREE.Sprite | null = null;
     let hoverStartTime = 0;
     const HOLD_THRESHOLD_MS = 5000;
-    let baseSpinSpeed = 0.002;
+    const baseSpinSpeed = 0.002;
 
     function scatteredSpherePoints(N: number) {
       const points: THREE.Vector3[] = [];
