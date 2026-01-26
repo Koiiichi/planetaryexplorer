@@ -258,6 +258,7 @@ interface TileViewerProps {
   initialLat?: number;
   initialLon?: number;
   initialZoom?: number;
+  navTimestamp?: number;
   hideUI?: boolean;
   selectedDataset?: string;
   splitViewEnabled?: boolean;
@@ -273,6 +274,7 @@ export default function TileViewer({
   initialLat,
   initialLon,
   initialZoom,
+  navTimestamp,
   hideUI = false,
   selectedDataset,
   splitViewEnabled,
@@ -285,6 +287,7 @@ export default function TileViewer({
   const compareViewerRef = useRef<HTMLDivElement | null>(null);
   const viewerObjRef = useRef<any | null>(null);
   const compareViewerObjRef = useRef<any | null>(null);
+  const osdRef = useRef<any | null>(null);
   // Track whether external body has been synced at least once
   // If we have an external body prop at mount, consider it already synced
   const hasExternalBodySynced = useRef<boolean>(initialBody !== undefined);
@@ -612,6 +615,7 @@ export default function TileViewer({
       console.log('[TileViewer3] Creating OpenSeadragon viewer for:', layerConfig.id);
       const OSDModule = await import("openseadragon");
       osd = (OSDModule.default ?? OSDModule) as typeof import("openseadragon");
+      osdRef.current = osd;
       if (!viewerRef.current || !mounted) return;
 
       // Clear any existing content to prevent conflicts
@@ -694,34 +698,108 @@ export default function TileViewer({
     };
   }, [layerConfig]);
 
-  // Handle initial navigation to coordinates from PhotoSphereGallery
+  // Handle navigation to coordinates (works for both initial load and Return to Pin)
+  const lastNavigatedCoordsRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (initialLat !== undefined && initialLon !== undefined && viewerObjRef.current) {
       const viewer = viewerObjRef.current;
+      // Include timestamp in the key
+      const coordsKey = `${initialLat.toFixed(4)},${initialLon.toFixed(4)},${initialZoom || 6},${navTimestamp || 0}`;
+
+      console.log('[TileViewer3] Navigation requested:', { lat: initialLat, lon: initialLon, ts: navTimestamp });
+
+      // FORCE navigation if timestamp is present, even if we think we are there. 
+      // We only skip if EVERYTHING including timestamp is identical to last run.
+      if (lastNavigatedCoordsRef.current === coordsKey) {
+        console.log('[TileViewer3] Skipping navigation - identical request already processed:', coordsKey);
+        return;
+      }
 
       // Wait a bit for viewer to be fully initialized
-      setTimeout(() => {
+      const navigationTimeout = setTimeout(() => {
         try {
-          // For OpenSeadragon viewers, we need to convert lat/lon to image coordinates
-          // This is a simplified conversion - for more accuracy, we'd need the specific projection
-          const normalizedX = (initialLon + 180) / 360; // Convert -180/180 to 0/1
-          const normalizedY = (90 - initialLat) / 180; // Convert -90/90 to 0/1 (flipped for image coordinates)
+          if (!viewer.viewport) {
+            console.warn('[TileViewer3] Viewer not ready for navigation');
+            return;
+          }
 
-          const imageRect = viewer.world.getItemAt(0).getBounds();
+          // Convert lat/lon to normalized coordinates (0-1 range)
+          // Handle both -180/180 and 0/360 longitude systems
+          // Longitude: if value is > 180, it's already in 0-360 system, otherwise convert from -180/180
+          let normalizedX;
+          if (initialLon > 180) {
+            // 0-360 system
+            normalizedX = initialLon / 360;
+          } else {
+            // -180 to 180 system
+            normalizedX = (initialLon + 180) / 360;
+          }
+
+          // Latitude: convert from -90/90 to 0/1 (0 at top, 1 at bottom)
+          const normalizedY = (90 - initialLat) / 180;
+
+          console.log('[TileViewer3] Coordinate conversion:', {
+            lat: initialLat,
+            lon: initialLon,
+            normalizedX,
+            normalizedY
+          });
+
+          const worldItem = viewer.world.getItemAt(0);
+          if (!worldItem) {
+            console.warn('[TileViewer3] No world item available for navigation');
+            return;
+          }
+          const imageRect = worldItem.getBounds();
           const targetX = imageRect.x + (normalizedX * imageRect.width);
           const targetY = imageRect.y + (normalizedY * imageRect.height);
 
-          const targetPoint = new viewer.Point(targetX, targetY);
-          const targetZoom = initialZoom ? Math.max(0, initialZoom - 5) : 2; // Convert tile zoom to viewer zoom
+          const OSDPoint = osdRef.current?.Point || (window as any).OpenSeadragon?.Point;
+          const OSDRect = osdRef.current?.Rect || (window as any).OpenSeadragon?.Rect;
 
-          viewer.viewport.panTo(targetPoint);
-          viewer.viewport.zoomTo(targetZoom);
+          if (!OSDPoint || !OSDRect) {
+            // Try to grab from viewer instance constructor if possible, or common global
+            console.warn('[TileViewer3] OpenSeadragon Point/Rect classes not available');
+            return;
+          }
+
+          const targetPoint = new OSDPoint(targetX, targetY);
+
+          // Determine target zoom. Ensure it's significantly zoomed in (at least 8x)
+          // or respects the requested zoom if it's higher.
+          const currentZoom = viewer.viewport.getZoom();
+          const desiredZoom = initialZoom ? Math.max(initialZoom, 10) : 10;
+
+          // Calculate bounds for fitBounds
+          // Viewport width is 1.0 in standard coordinates (usually)
+          // So width of bounds = 1.0 / desiredZoom
+          const boundsWidth = 1.0 / desiredZoom;
+          const aspectRatio = viewer.viewport.getAspectRatio();
+          const boundsHeight = boundsWidth / aspectRatio;
+
+          const targetBounds = new OSDRect(
+            targetX - (boundsWidth / 2),
+            targetY - (boundsHeight / 2),
+            boundsWidth,
+            boundsHeight
+          );
+
+          console.log('[TileViewer3] Executing fitBounds:', targetBounds, 'TargetZoom:', desiredZoom);
+
+          // fitBounds(bounds, immediate)
+          viewer.viewport.fitBounds(targetBounds, false);
+
+          lastNavigatedCoordsRef.current = coordsKey;
+          console.log('[TileViewer3] Navigation complete and recorded:', coordsKey);
         } catch (error) {
-          console.warn("Could not navigate to initial coordinates:", error);
+          console.warn("Could not navigate to coordinates:", error);
         }
-      }, 1000);
+      }, 100); // 100ms is enough, 500ms might be too slow and feel "stuck"
+
+      return () => clearTimeout(navigationTimeout);
     }
-  }, [initialLat, initialLon, initialZoom, layerConfig]);
+  }, [initialLat, initialLon, initialZoom, navTimestamp]);
 
   // Split/overlay viewer functionality
   // Initialize and sync viewers

@@ -9,9 +9,18 @@ import asyncio
 
 from .deepseek_provider import DeepSeekProvider, KeywordProvider
 
+import os
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Debug environment
+key = os.getenv('DEEPSEEK_API_KEY')
+if key:
+    logger.info(f"Startup: DEEPSEEK_API_KEY found (length: {len(key)}, ends with: {key[-4:]})")
+else:
+    logger.warning("Startup: DEEPSEEK_API_KEY NOT FOUND in environment")
 
 class FeatureSearchEngine:
     def __init__(self):
@@ -186,7 +195,7 @@ async def search_features(query: str) -> Dict:
                 logger.info(f"DeepSeek success: found '{search_result.feature_name}' with confidence {search_result.confidence}")
         except Exception as e:
             logger.warning(f"DeepSeek provider failed: {e}")
-    
+            
     # Fallback to keyword provider
     if not search_result:
         try:
@@ -219,7 +228,8 @@ async def search_features(query: str) -> Dict:
             'lon': search_result.lon,
             'category': 'Feature',
             'keywords': search_result.tags,
-            '_match_score': search_result.confidence * 100
+            '_match_score': search_result.confidence * 100,
+            'ai_description': search_result.description
         }]
         
     search_time = time.time() - start_time
@@ -256,6 +266,7 @@ async def search_features(query: str) -> Dict:
             'diameter_km': primary.get('diameter_km'),
             'origin': primary.get('origin')
         },
+        'ai_description': primary.get('ai_description'),
         'zoom': 6,
         'layer': f"{primary.get('body')}_default",
         'related_features': [

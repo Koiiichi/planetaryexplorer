@@ -1,15 +1,28 @@
 from __future__ import annotations
 
 from typing import Dict
+import os
+from pathlib import Path as PathLib
 
 import httpx
 from fastapi import FastAPI, HTTPException, Path, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
-from config import DatasetConfig, load_datasets
-from schemas import DatasetListItem, ViewerConfig
+# Load environment variables from .env.local (Next.js convention)
+env_path = PathLib(__file__).parent.parent / '.env.local'
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✓ Loaded environment from {env_path}")
+else:
+    # Fallback to .env
+    load_dotenv()
+    print("✓ Loaded environment from .env (if exists)")
+
+from .config import DatasetConfig, load_datasets
+from .schemas import DatasetListItem, ViewerConfig
 
 app = FastAPI(title="StellarCanvas Tiles", version="0.2.0")
 

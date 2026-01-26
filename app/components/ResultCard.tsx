@@ -1,8 +1,9 @@
 "use client";
 
-import { X, MapPin, Globe, Ruler, CheckCircle, Copy, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { X, MapPin, Globe, Ruler, CheckCircle, Copy, Loader2, Star } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useAiDescription } from "@/app/lib/useAiDescription";
+import { addBookmark } from "./BookmarksDrawer";
 
 interface ResultCardProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface ResultCardProps {
   } | null;
   provider?: string;
   aiDescription?: string;
+  onBookmarkResult?: (success: boolean) => void;
 }
 
 export default function ResultCard({
@@ -26,21 +28,44 @@ export default function ResultCard({
   feature,
   provider,
   aiDescription: serverAiDescription,
+  onBookmarkResult,
 }: ResultCardProps) {
   const [copied, setCopied] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
-  // Use hook to fetch AI description if not provided from server
+  useEffect(() => {
+    if (feature && isOpen) {
+      const stored = localStorage.getItem('pe_bookmarks');
+      if (stored) {
+        try {
+          const bookmarks = JSON.parse(stored);
+          setIsBookmarked(bookmarks.some((b: any) => b.name === feature.name && b.body === feature.body));
+        } catch {
+          // ignore
+        }
+      } else {
+        setIsBookmarked(false);
+      }
+    }
+  }, [feature, isOpen]);
+
+  // Use hook to fetch AI description ONLY if not provided from server
   const featureKey = feature ? `${feature.body}:${feature.name}` : '';
   const { description: hookDescription, isLoading: isLoadingDescription } = useAiDescription({
     featureKey,
     meta: feature || undefined,
-    // Always try to fetch if no valid server description
+    // Only fetch if enabled AND no valid server description exists.
+    // This prevents the hook from clearing the server description with a loading state.
     enabled: isOpen && !!feature && !serverAiDescription
   });
 
   // Prefer server description, fallback to hook description
   const aiDescription = serverAiDescription || hookDescription;
-  
+
+  if (isOpen) {
+    console.log('[ResultCard RENDER] serverDesc:', !!serverAiDescription, 'hookDesc:', !!hookDescription, 'final:', !!aiDescription);
+  }
+
   // Debug logging
   if (isOpen && feature) {
     console.log('[ResultCard] Feature:', feature.name, 'Server AI:', !!serverAiDescription, 'Hook AI:', !!hookDescription, 'Loading:', isLoadingDescription);
@@ -67,13 +92,35 @@ export default function ResultCard({
             </div>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="text-white/60 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg flex-shrink-0 ml-2"
-          title="Close"
-        >
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              // Toggle logic
+              if (isBookmarked) {
+                // For now, we only support adding via this button as removing requires ID
+                // But visual feedback is important.
+                // Implemented "add only" for now as per minimal change, but updated UI to reflected state
+              } else {
+                const added = addBookmark(feature.name, feature.body, feature.lat, feature.lon);
+                if (added) {
+                  setIsBookmarked(true);
+                  if (onBookmarkResult) onBookmarkResult(true);
+                }
+              }
+            }}
+            className={`transition-colors p-1.5 rounded-lg flex-shrink-0 ${isBookmarked ? 'text-yellow-400 bg-white/10' : 'text-white/60 hover:text-yellow-400 hover:bg-white/10'}`}
+            title={isBookmarked ? "Bookmarked" : "Save to bookmarks"}
+          >
+            <Star size={18} fill={isBookmarked ? "currentColor" : "none"} />
+          </button>
+          <button
+            onClick={onClose}
+            className="text-white/60 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg flex-shrink-0"
+            title="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -112,7 +159,7 @@ export default function ResultCard({
           </div>
         )}
 
-        {(aiDescription || isLoadingDescription) && (
+        {(aiDescription || (isLoadingDescription && !serverAiDescription)) && (
           <div className="pt-3 border-t border-white/10">
             <div className="text-white/60 text-xs mb-2 uppercase tracking-wide">About</div>
             {isLoadingDescription ? (

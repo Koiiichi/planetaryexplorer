@@ -11,6 +11,7 @@ interface TileViewerWrapperProps {
   initialLat?: number;
   initialLon?: number;
   initialZoom?: number;
+  navTimestamp?: number;
   hideUI?: boolean;
   selectedDataset?: string;
   splitViewEnabled?: boolean;
@@ -19,12 +20,13 @@ interface TileViewerWrapperProps {
   onFeatureSelected?: (feature: any) => void;
 }
 
-export default function TileViewerWrapper({ 
-  searchQuery, 
-  initialBody, 
-  initialLat, 
-  initialLon, 
+export default function TileViewerWrapper({
+  searchQuery,
+  initialBody,
+  initialLat,
+  initialLon,
   initialZoom,
+  navTimestamp,
   hideUI = true,
   selectedDataset,
   splitViewEnabled,
@@ -46,13 +48,14 @@ export default function TileViewerWrapper({
   };
 
   return (
-    <TileViewer 
+    <TileViewer
       externalSearchQuery={searchQuery}
       onSearchChange={handleSearchChange}
       initialBody={initialBody}
       initialLat={initialLat}
       initialLon={initialLon}
       initialZoom={initialZoom}
+      navTimestamp={navTimestamp}
       hideUI={hideUI}
       selectedDataset={selectedDataset}
       splitViewEnabled={splitViewEnabled}

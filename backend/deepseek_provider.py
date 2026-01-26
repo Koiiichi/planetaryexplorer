@@ -21,6 +21,7 @@ class SearchResult:
     confidence: float
     tags: List[str]
     feature_name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class DeepSeekProvider:
@@ -120,14 +121,15 @@ Please respond with a JSON object containing:
     "feature_name": "specific feature name if mentioned|null",
     "size_preference": "large|small|null",
     "sort": "asc|desc|null",
-    "confidence": 0.0-1.0
+    "confidence": 0.0-1.0,
+    "description": "A concise 1-sentence description of the feature if found, or general info if generic search (max 30 words)"
 }}
 
 Examples:
-- "show me large mountains on moon" -> {{"body": "moon", "feature_type": "mountain", "feature_name": null, "size_preference": "large", "sort": "desc", "confidence": 0.9}}
-- "smallest crater on mars" -> {{"body": "mars", "feature_type": "crater", "feature_name": null, "size_preference": "small", "sort": "asc", "confidence": 0.95}}
-- "find Tycho crater" -> {{"body": null, "feature_type": "crater", "feature_name": "Tycho", "size_preference": null, "sort": null, "confidence": 0.95}}
-- "Mars valleys" -> {{"body": "mars", "feature_type": "valley", "feature_name": null, "size_preference": null, "sort": null, "confidence": 0.8}}
+- "show me large mountains on moon" -> {{"body": "moon", "feature_type": "mountain", "feature_name": null, "size_preference": "large", "sort": "desc", "confidence": 0.9, "description": "Listing large mountains on the Moon."}}
+- "smallest crater on mars" -> {{"body": "mars", "feature_type": "crater", "feature_name": null, "size_preference": "small", "sort": "asc", "confidence": 0.95, "description": "Smallest known craters on Mars."}}
+- "find Tycho crater" -> {{"body": null, "feature_type": "crater", "feature_name": "Tycho", "size_preference": null, "sort": null, "confidence": 0.95, "description": "Tycho is a prominent lunar impact crater located in the southern lunar highlands."}}
+- "Mars valleys" -> {{"body": "mars", "feature_type": "valley", "feature_name": null, "size_preference": null, "sort": null, "confidence": 0.8, "description": "Valleys on Mars, often formed by ancient water flows."}}
 
 Respond only with valid JSON, no explanations."""
         
@@ -280,7 +282,8 @@ Respond only with valid JSON, no explanations."""
             layer_id=f"{best_match.get('body', '')}_default",
             confidence=confidence * (candidates[0]['score'] / 100),
             tags=best_match.get('keywords', []),
-            feature_name=best_match.get('name')
+            feature_name=best_match.get('name'),
+            description=parsed_result.get('description')
         )
 
 

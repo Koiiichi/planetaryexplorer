@@ -153,3 +153,52 @@ class SearchResult(BaseModel):
     total_results: Optional[int] = None
     suggestions: Optional[List[str]] = None
     parsed: Optional[dict] = None
+
+
+# ====== DeepSeek API Response Schemas ======
+
+from enum import Enum
+
+class CelestialBodyEnum(str, Enum):
+    MOON = "moon"
+    MARS = "mars"
+    MERCURY = "mercury"
+    CERES = "ceres"
+    VESTA = "vesta"
+    EARTH = "earth"
+
+class FeatureTypeEnum(str, Enum):
+    CRATER = "Crater"
+    MONS = "Mons"
+    MONTES = "Montes"
+    MARE = "Mare"
+    PLANITIA = "Planitia"
+    VALLIS = "Vallis"
+    UNKNOWN = "Unknown"
+
+class SortOrder(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+class DeepSeekParsedQuery(BaseModel):
+    """Validated schema for DeepSeek API parsed query response."""
+    body: Optional[CelestialBodyEnum] = None
+    feature_type: Optional[FeatureTypeEnum] = None
+    feature_name: Optional[str] = None
+    size_preference: Optional[str] = None
+    sort: Optional[SortOrder] = None
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+
+    class Config:
+        use_enum_values = True
+        json_schema_extra = {
+            "example": {
+                "body": "moon",
+                "feature_type": "Crater",
+                "feature_name": "Tycho",
+                "size_preference": None,
+                "sort": None,
+                "confidence": 0.95
+            }
+        }
+
