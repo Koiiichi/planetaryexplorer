@@ -79,12 +79,16 @@ export default function AdvancedDrawer({
   const availableLayers = layersByBody[currentBody] || [];
 
   const datasets = [
+    { id: "earth:openstreetmap", name: "OpenStreetMap", body: "earth" },
+    { id: "earth:satellite_arcgis", name: "ArcGIS World Imagery", body: "earth" },
     { id: "moon:lro_wac_global", name: "LRO WAC Global Mosaic", body: "moon" },
     { id: "moon:lro_nac_apollo", name: "LRO NAC Apollo Sites", body: "moon" },
     { id: "mars:mars_mgs_mola", name: "Mars MOLA Shaded Relief", body: "mars" },
     { id: "mars:mars_viking_mosaic", name: "Mars Viking MDIM 2.1", body: "mars" },
     { id: "mercury:messenger_mdis_basemap", name: "MESSENGER MDIS Basemap", body: "mercury" },
     { id: "mercury:messenger_global_mosaic", name: "MESSENGER Global Mosaic", body: "mercury" },
+    { id: "ceres:ceres_dawn_hamo", name: "Ceres Dawn HAMO", body: "ceres" },
+    { id: "vesta:vesta_dawn_hamo", name: "Vesta Dawn HAMO", body: "vesta" },
   ];
 
   const handleDatasetChange = (datasetId: string) => {
@@ -133,20 +137,21 @@ export default function AdvancedDrawer({
             <span className="text-sm font-medium">Base Layer</span>
           </div>
           <div className="space-y-1">
-            {datasets.map((dataset) => (
-              <button
-                key={dataset.id}
-                onClick={() => handleDatasetChange(dataset.id)}
-                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  localDataset === dataset.id
-                    ? "bg-white/20 text-white"
-                    : "bg-white/5 hover:bg-white/10 text-white/80"
-                }`}
-              >
-                <div className="font-medium text-sm">{dataset.name}</div>
-                <div className="text-xs text-white/60 capitalize">{dataset.body}</div>
-              </button>
-            ))}
+            {datasets
+              .filter(d => d.body === currentBody)
+              .map((dataset) => (
+                <button
+                  key={dataset.id}
+                  onClick={() => handleDatasetChange(dataset.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${localDataset === dataset.id
+                      ? "bg-white/20 text-white"
+                      : "bg-white/5 hover:bg-white/10 text-white/80"
+                    }`}
+                >
+                  <div className="font-medium text-sm">{dataset.name}</div>
+                  <div className="text-xs text-white/60 capitalize">{dataset.body}</div>
+                </button>
+              ))}
           </div>
         </div>
 
@@ -159,15 +164,13 @@ export default function AdvancedDrawer({
             </div>
             <button
               onClick={handleSplitViewToggle}
-              className={`relative w-11 h-6 rounded-full transition-colors ${
-                localSplitView ? "bg-blue-500" : "bg-white/20"
-              }`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${localSplitView ? "bg-blue-500" : "bg-white/20"
+                }`}
               aria-label="Toggle split view"
             >
               <span
-                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  localSplitView ? "translate-x-5" : ""
-                }`}
+                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${localSplitView ? "translate-x-5" : ""
+                  }`}
               />
             </button>
           </div>
@@ -181,11 +184,10 @@ export default function AdvancedDrawer({
                   <button
                     key={layer.id}
                     onClick={() => handleSplitLayerChange(layer.id)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${
-                      localSplitLayer === layer.id
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${localSplitLayer === layer.id
                         ? "bg-blue-500/30 text-white"
                         : "bg-white/5 hover:bg-white/10 text-white/70"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span>{layer.name}</span>
@@ -207,15 +209,13 @@ export default function AdvancedDrawer({
             </div>
             <button
               onClick={handleOsdToolbarToggle}
-              className={`relative w-11 h-6 rounded-full transition-colors ${
-                localOsdToolbar ? "bg-blue-500" : "bg-white/20"
-              }`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${localOsdToolbar ? "bg-blue-500" : "bg-white/20"
+                }`}
               aria-label="Toggle OSD toolbar"
             >
               <span
-                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  localOsdToolbar ? "translate-x-5" : ""
-                }`}
+                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${localOsdToolbar ? "translate-x-5" : ""
+                  }`}
               />
             </button>
           </div>

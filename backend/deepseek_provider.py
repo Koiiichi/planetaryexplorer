@@ -119,13 +119,15 @@ Please respond with a JSON object containing:
     "feature_type": "crater|mountain|valley|sea|plain|ridge|bay|null", 
     "feature_name": "specific feature name if mentioned|null",
     "size_preference": "large|small|null",
+    "sort": "asc|desc|null",
     "confidence": 0.0-1.0
 }}
 
 Examples:
-- "show me large mountains on moon" -> {{"body": "moon", "feature_type": "mountain", "feature_name": null, "size_preference": "large", "confidence": 0.9}}
-- "find Tycho crater" -> {{"body": null, "feature_type": "crater", "feature_name": "Tycho", "size_preference": null, "confidence": 0.95}}
-- "Mars valleys" -> {{"body": "mars", "feature_type": "valley", "feature_name": null, "size_preference": null, "confidence": 0.8}}
+- "show me large mountains on moon" -> {{"body": "moon", "feature_type": "mountain", "feature_name": null, "size_preference": "large", "sort": "desc", "confidence": 0.9}}
+- "smallest crater on mars" -> {{"body": "mars", "feature_type": "crater", "feature_name": null, "size_preference": "small", "sort": "asc", "confidence": 0.95}}
+- "find Tycho crater" -> {{"body": null, "feature_type": "crater", "feature_name": "Tycho", "size_preference": null, "sort": null, "confidence": 0.95}}
+- "Mars valleys" -> {{"body": "mars", "feature_type": "valley", "feature_name": null, "size_preference": null, "sort": null, "confidence": 0.8}}
 
 Respond only with valid JSON, no explanations."""
         
@@ -237,8 +239,38 @@ Respond only with valid JSON, no explanations."""
         if not candidates:
             return None
             
-        # Sort by score and return best match
-        candidates.sort(key=lambda x: x['score'], reverse=True)
+        # Parse sort preference
+        sort_order = parsed_result.get('sort')
+        
+        # Sort candidates
+        if sort_order == 'asc':
+            # Sort by diameter ascending (smallest first) - prioritize those with diameter data
+            candidates.sort(key=lambda x: (
+                -x['score'], # Primary: Match score (desc)
+                x['feature'].get('diameter_km', 999999) or 999999 # Secondary: Size (asc)
+            ))
+            # If high confidence match found with explicit sort, re-sort primarily by size for top matches
+            top_candidates = [c for c in candidates if c['score'] >= 50]
+            if top_candidates:
+                 top_candidates.sort(key=lambda x: x['feature'].get('diameter_km', 999999) or 999999)
+                 candidates = top_candidates + [c for c in candidates if c not in top_candidates]
+                 
+        elif sort_order == 'desc':
+            # Sort by diameter descending (largest first)
+            candidates.sort(key=lambda x: (
+                -x['score'], # Primary: Match score (desc)
+                -(x['feature'].get('diameter_km', 0) or 0) # Secondary: Size (desc)
+            ))
+             # If high confidence match found with explicit sort, re-sort primarily by size for top matches
+            top_candidates = [c for c in candidates if c['score'] >= 50]
+            if top_candidates:
+                 top_candidates.sort(key=lambda x: -(x['feature'].get('diameter_km', 0) or 0))
+                 candidates = top_candidates + [c for c in candidates if c not in top_candidates]
+                 
+        else:
+            # Default: Sort by match score
+            candidates.sort(key=lambda x: x['score'], reverse=True)
+
         best_match = candidates[0]['feature']
         
         return SearchResult(

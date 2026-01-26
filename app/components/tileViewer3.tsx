@@ -82,7 +82,7 @@ const TREK_TEMPLATES: Record<
       }
     },
     {
-      id: "modis_aqua_temporal", 
+      id: "modis_aqua_temporal",
       title: "MODIS Aqua True Color (temporal)",
       template: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_CorrectedReflectance_TrueColor/default/{date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg",
       type: "temporal",
@@ -266,8 +266,8 @@ interface TileViewerProps {
   onFeatureSelected?: (feature: any) => void;
 }
 
-export default function TileViewer({ 
-  externalSearchQuery, 
+export default function TileViewer({
+  externalSearchQuery,
   onSearchChange,
   initialBody,
   initialLat,
@@ -302,7 +302,7 @@ export default function TileViewer({
   const [viewMode, setViewMode] = useState<"single" | "split" | "overlay">("single");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [features, setFeatures] = useState<PlanetFeature[]>([]);
-  
+
   // Sync split view mode with parent prop
   useEffect(() => {
     if (splitViewEnabled !== undefined) {
@@ -310,7 +310,7 @@ export default function TileViewer({
       console.log('[TileViewer3] View mode changed:', splitViewEnabled ? "split" : "single");
     }
   }, [splitViewEnabled]);
-  
+
   // Sync split layer selection with parent prop
   useEffect(() => {
     if (splitLayerId !== undefined) {
@@ -318,7 +318,7 @@ export default function TileViewer({
       console.log('[TileViewer3] Split layer changed:', splitLayerId);
     }
   }, [splitLayerId]);
-  
+
   // Sync dataset selection with parent prop
   useEffect(() => {
     if (selectedDataset && selectedDataset !== "default") {
@@ -385,12 +385,12 @@ export default function TileViewer({
           setIsSearching(false);
         }
       }, 500); // 500ms debounce
-      
+
       return () => clearTimeout(debounceTimer);
     } else if (!searchText.trim()) {
       setFeatures([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText, selectedBody]);
 
   // client-side detection to prevent hydration mismatch
@@ -516,13 +516,13 @@ export default function TileViewer({
           console.log('[TileViewer3] Found TREK template:', selectedLayerId, 'for body:', bodyKey);
           // build a minimal layerConfig from template
           let tileTemplate = foundTemplate.template;
-          
+
           // Handle temporal templates with date substitution
           if (foundTemplate.type === "temporal" && selectedDate) {
             const formattedDate = formatDateForTemplate(selectedDate, foundTemplate);
             tileTemplate = tileTemplate.replace(/{date}/g, formattedDate);
           }
-          
+
           const cfg: ViewerConfigResponse = {
             id: selectedLayerId,
             title: foundTemplate.title,
@@ -551,7 +551,7 @@ export default function TileViewer({
               const formattedDate = formatDateForTemplate(selectedDate, t);
               tileTemplate = tileTemplate.replace(/{date}/g, formattedDate);
             }
-            
+
             const cfg: ViewerConfigResponse = {
               id: selectedLayerId,
               title: t.title,
@@ -583,7 +583,7 @@ export default function TileViewer({
     console.log('[TileViewer3] Feature loading - selectedBody:', selectedBody);
     // Clear features immediately to avoid showing wrong body's features
     setFeatures([]);
-    
+
     if (selectedBody === "moon") {
       console.log('[TileViewer3] Loading Moon features...');
       loadMoonGazetteer();
@@ -613,7 +613,7 @@ export default function TileViewer({
       const OSDModule = await import("openseadragon");
       osd = (OSDModule.default ?? OSDModule) as typeof import("openseadragon");
       if (!viewerRef.current || !mounted) return;
-      
+
       // Clear any existing content to prevent conflicts
       viewerRef.current.innerHTML = "";
 
@@ -698,7 +698,7 @@ export default function TileViewer({
   useEffect(() => {
     if (initialLat !== undefined && initialLon !== undefined && viewerObjRef.current) {
       const viewer = viewerObjRef.current;
-      
+
       // Wait a bit for viewer to be fully initialized
       setTimeout(() => {
         try {
@@ -706,14 +706,14 @@ export default function TileViewer({
           // This is a simplified conversion - for more accuracy, we'd need the specific projection
           const normalizedX = (initialLon + 180) / 360; // Convert -180/180 to 0/1
           const normalizedY = (90 - initialLat) / 180; // Convert -90/90 to 0/1 (flipped for image coordinates)
-          
+
           const imageRect = viewer.world.getItemAt(0).getBounds();
           const targetX = imageRect.x + (normalizedX * imageRect.width);
           const targetY = imageRect.y + (normalizedY * imageRect.height);
-          
+
           const targetPoint = new viewer.Point(targetX, targetY);
           const targetZoom = initialZoom ? Math.max(0, initialZoom - 5) : 2; // Convert tile zoom to viewer zoom
-          
+
           viewer.viewport.panTo(targetPoint);
           viewer.viewport.zoomTo(targetZoom);
         } catch (error) {
@@ -753,7 +753,7 @@ export default function TileViewer({
         cleanup();
         return;
       }
-      
+
       if (!layerConfig) {
         cleanup();
         return;
@@ -782,7 +782,7 @@ export default function TileViewer({
 
         // tile URL template from layerConfig
         const template = layerConfig.tile_url_template;
-        
+
         // Create a template object for comparison logic
         const foundTemplate = {
           template: layerConfig.tile_url_template,
@@ -808,7 +808,7 @@ export default function TileViewer({
 
             let finalY = y;
             const finalX = wrappedX;
-            
+
             // Special handling for NASA GIBS (uses TMS coordinate system)
             if (template.includes('gibs.earthdata.nasa.gov')) {
               // GIBS uses TMS where Y is flipped: y_tms = (2^z - 1) - y_xyz
@@ -828,7 +828,7 @@ export default function TileViewer({
 
         // Create main viewer
         if (!viewerRef.current) return;
-        
+
         // Clear any existing content to prevent conflicts  
         viewerRef.current.innerHTML = "";
         mainViewer = new osdModule({
@@ -837,7 +837,7 @@ export default function TileViewer({
           tileSources: [tileSource],
           showNavigator: osdToolbarVisible || false,  // Controlled by Advanced settings
           showZoomControl: osdToolbarVisible || false,
-          showHomeControl: osdToolbarVisible || false, 
+          showHomeControl: osdToolbarVisible || false,
           showFullPageControl: osdToolbarVisible || false,
           gestureSettingsMouse: { clickToZoom: false },
           constrainDuringPan: true,
@@ -861,16 +861,16 @@ export default function TileViewer({
             // Get viewport point from click position
             const viewportPoint = mainViewer.viewport.pointFromPixel(event.position);
             const imagePoint = mainViewer.viewport.viewportToImageCoordinates(viewportPoint);
-            
+
             // Convert to lat/lon
             const imageWidth = mainViewer.world.getItemAt(0).source.dimensions.x;
             const imageHeight = mainViewer.world.getItemAt(0).source.dimensions.y;
-            
+
             const lon = (imagePoint.x / imageWidth) * 360 - 180;
             const lat = 90 - (imagePoint.y / imageHeight) * 180;
-            
+
             console.log('[Reverse Search] Double-click at:', { lat, lon, body: selectedBody });
-            
+
             // Find nearest feature
             handleReverseSearch(lat, lon, selectedBody);
           }
@@ -880,7 +880,7 @@ export default function TileViewer({
         const overlayTemplate = selectedOverlayId
           ? (TREK_TEMPLATES[selectedBody] || []).find((t) => t.id === selectedOverlayId)
           : null;
-        
+
         // For split mode, use the overlay template if selected, otherwise use the main template
         // For overlay mode, require an overlay template
         const compareTemplate = overlayTemplate || (viewMode === "split" ? foundTemplate : null);
@@ -910,22 +910,22 @@ export default function TileViewer({
                 const maxTiles = Math.pow(2, level);
                 const wrappedX = ((x % maxTiles) + maxTiles) % maxTiles;
                 if (y < 0 || y >= maxTiles) return "";
-                
+
                 let finalY = y;
                 const finalX = wrappedX;
-                
+
                 let url = compareTemplate.template;
                 if (compareTemplate.type === "temporal" && selectedDate) {
                   const formattedDate = formatDateForTemplate(selectedDate, compareTemplate);
                   url = url.replace("{date}", formattedDate);
                 }
-                
+
                 // Special handling for NASA GIBS (uses TMS coordinate system)
                 if (url.includes('gibs.earthdata.nasa.gov')) {
                   // GIBS uses TMS where Y is flipped: y_tms = (2^z - 1) - y_xyz
                   finalY = Math.pow(2, z) - 1 - y;
                 }
-                
+
                 return url
                   .replace(/{z}/g, String(z))
                   .replace(/{row}/g, String(finalY))
@@ -958,12 +958,12 @@ export default function TileViewer({
               if (!src || !dst) return;
               const handler = () => {
                 if (isUpdating) return; // Prevent infinite recursion
-                
+
                 try {
                   isUpdating = true;
                   const center = src.viewport.getCenter();
                   const zoom = src.viewport.getZoom();
-                  
+
                   // Use immediate=false to prevent triggering events during sync
                   dst.viewport.panTo(center, false);
                   dst.viewport.zoomTo(zoom, null, false);
@@ -1008,12 +1008,12 @@ export default function TileViewer({
 
     return () => {
       mounted = false;
-      try { if (viewerObjRef.current) viewerObjRef.current.destroy(); } catch {}
-      try { if (compareViewerObjRef.current) compareViewerObjRef.current.destroy(); } catch {}
+      try { if (viewerObjRef.current) viewerObjRef.current.destroy(); } catch { }
+      try { if (compareViewerObjRef.current) compareViewerObjRef.current.destroy(); } catch { }
       viewerObjRef.current = null;
       compareViewerObjRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBody, selectedLayerId, selectedOverlayId, viewMode, selectedDate, layerConfig]);
 
   // Update OSD toolbar visibility dynamically
@@ -1054,7 +1054,7 @@ export default function TileViewer({
   // Helper to format dates for different APIs
   function formatDateForTemplate(date: string, template: any): string {
     if (!date || !template.temporalRange) return date;
-    
+
     const format = template.temporalRange.format;
     switch (format) {
       case "YYYY-MM-DD":
@@ -1167,24 +1167,24 @@ export default function TileViewer({
         },
         body: JSON.stringify({ query }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Search failed: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.found) {
         const { body, center, feature, provider, ai_description } = result;
-        
+
         if (body !== selectedBody) {
           setSelectedBody(body);
         }
-        
+
         setSearchProvider(provider);
         setAiDescription(ai_description);
         setSearchSuggestions([]);
-        
+
         const searchFeature = {
           name: feature.name,
           lat: center.lat,
@@ -1192,13 +1192,13 @@ export default function TileViewer({
           category: feature.category,
           diameter_km: feature.diameter_km
         };
-        
+
         setFeatures([searchFeature]);
-        
+
         setTimeout(() => {
           flyToLocation(center.lon, center.lat, 6, searchFeature);
         }, 1000);
-        
+
         console.log('ui.flow', 'search_completed', {
           query,
           result: feature.name,
@@ -1219,19 +1219,19 @@ export default function TileViewer({
 
   async function searchEarthLocations(query: string) {
     if (!query.trim()) return;
-    
+
     try {
       // Use Nominatim (OpenStreetMap) geocoding API for Earth locations
       const encodedQuery = encodeURIComponent(query.trim());
       const resp = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=20&addressdetails=1`
       );
-      
+
       if (!resp.ok) {
         console.warn("Nominatim geocoding failed:", resp.status);
         return;
       }
-      
+
       const results = await resp.json();
       const locations: PlanetFeature[] = results.map((item: any) => ({
         name: item.display_name,
@@ -1240,7 +1240,7 @@ export default function TileViewer({
         type: item.type,
         class: item.class
       }));
-      
+
       setFeatures(locations);
     } catch (err) {
       console.error("Error searching Earth locations:", err);
@@ -1294,7 +1294,7 @@ export default function TileViewer({
   // Reverse search: find nearest feature to clicked coordinates
   function handleReverseSearch(lat: number, lon: number, body: string) {
     console.log('[Reverse Search] Finding nearest feature to:', { lat, lon, body });
-    
+
     if (features.length === 0) {
       console.warn('[Reverse Search] No features loaded for', body);
       // Show a helpful message
@@ -1307,7 +1307,7 @@ export default function TileViewer({
       const R = 6371; // Earth radius in km (approximate for all bodies)
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
+      const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
@@ -1400,7 +1400,7 @@ export default function TileViewer({
         z-index: 100;
         position: relative;
       `;
-      
+
       // Create pin icon using SVG (Lucide MapPin)
       marker.innerHTML = `
         <div style="position: absolute; inset: 0; margin: -8px; border-radius: 50%; background: rgba(59, 130, 246, 0.3); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
@@ -1416,7 +1416,7 @@ export default function TileViewer({
         placement: "TOP_LEFT",
         checkResize: false,
       });
-      
+
       console.log('ui.flow', 'pin_rendered', true);
     } catch (err) {
       console.error("Error adding overlay:", err);
@@ -1424,21 +1424,21 @@ export default function TileViewer({
 
     // Smooth flyTo animation
     const viewportPoint = v.viewport.imageToViewportCoordinates(x, y);
-    
+
     // Enable animation for smooth transition
     v.animationTime = 1.2;
     v.viewport.panTo(viewportPoint, true);
-    
+
     setTimeout(() => {
       v.viewport.zoomTo(zoomLevel, viewportPoint, true);
-      
+
       // Log completion and show info panel
       const endTime = Date.now();
-      console.log('ui.flow', 'camera_flyto_completed', { 
+      console.log('ui.flow', 'camera_flyto_completed', {
         duration: endTime - startTime,
         target: { lon, lat, zoom: zoomLevel }
       });
-      
+
       // Show info panel if feature data provided
       if (featureData) {
         setSelectedFeature({
@@ -1494,13 +1494,28 @@ export default function TileViewer({
               {(viewMode === "split" || viewMode === "overlay") && (
                 <div ref={compareViewerRef} style={{ width: viewMode === "split" ? "50%" : "100%", height: "100%", position: "absolute", right: 0, top: 0, pointerEvents: "auto" }} />
               )}
+              {/* Custom styles for OSD controls to avoid header overlap */}
+              <style jsx global>{`
+                /* Push OSD controls down to avoid header overlap */
+                .openseadragon-container > div:nth-child(2) {
+                   top: 80px !important;
+                }
+                /* Also target specific OSD standard controls if they are direct children */
+                div[title="Zoom in"], div[title="Zoom out"], div[title="Go home"], div[title="Toggle full page"] {
+                   margin-top: 80px !important;
+                }
+                /* Push navigator down */
+                div[title="Navigator"] {
+                   margin-top: 80px !important;
+                }
+              `}</style>
             </>
           )}
         </div>
-        
+
         {/* Info Panel (Legacy - hidden by default) */}
         {process.env.NEXT_PUBLIC_ENABLE_LEGACY_UI === 'true' && (
-          <InfoPanel 
+          <InfoPanel
             isOpen={showInfoPanel}
             onClose={() => setShowInfoPanel(false)}
             feature={selectedFeature}
@@ -1553,9 +1568,9 @@ export default function TileViewer({
                 return (
                   <label>
                     Date:
-                    <input 
-                      type="date" 
-                      value={selectedDate} 
+                    <input
+                      type="date"
+                      value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       min="2000-01-01"
                       max={new Date().toISOString().split('T')[0]}
@@ -1592,22 +1607,22 @@ export default function TileViewer({
           {/* Temporal Date Input for NASA GIBS layers */}
           {selectedBody === "earth" && (
             (() => {
-              const currentTemplate = selectedLayerId ? 
+              const currentTemplate = selectedLayerId ?
                 (TREK_TEMPLATES[selectedBody] || []).find(t => t.id === selectedLayerId) : null;
-              const compareTemplate = selectedOverlayId ? 
+              const compareTemplate = selectedOverlayId ?
                 (TREK_TEMPLATES[selectedBody] || []).find(t => t.id === selectedOverlayId) : null;
-              
-              const needsTemporalDate = 
-                (currentTemplate?.type === "temporal") || 
+
+              const needsTemporalDate =
+                (currentTemplate?.type === "temporal") ||
                 (compareTemplate?.type === "temporal");
-              
+
               if (needsTemporalDate) {
                 return (
                   <label>
                     Date:
-                    <input 
-                      type="date" 
-                      value={selectedDate} 
+                    <input
+                      type="date"
+                      value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       min="2000-01-01"
                       max={new Date().toISOString().split('T')[0]}
@@ -1623,7 +1638,7 @@ export default function TileViewer({
           {viewMode === "overlay" && (
             <label>
               Opacity:
-              <input type="range" min={0} max={1} step={0.05} value={overlayOpacity} onChange={(e) => setOverlayOpacity(Number(e.target.value))}/>
+              <input type="range" min={0} max={1} step={0.05} value={overlayOpacity} onChange={(e) => setOverlayOpacity(Number(e.target.value))} />
             </label>
           )}
 
@@ -1658,16 +1673,16 @@ export default function TileViewer({
       <aside style={{ width: 360, borderLeft: "1px solid #eee", padding: 8, overflow: "auto" }}>
         <h3>Features / Search {isSearching && <span style={{ fontSize: '12px', color: '#666' }}>Searching...</span>}</h3>
         <div style={{ position: "relative", marginBottom: 8 }}>
-          <input 
-            type="text" 
-            placeholder="Filter features..." 
-            value={searchText} 
+          <input
+            type="text"
+            placeholder="Filter features..."
+            value={searchText}
             onChange={(e) => {
               const newValue = e.target.value;
               setSearchText(newValue);
               onSearchChange?.(newValue);
-            }} 
-            style={{ width: "100%", paddingRight: searchText ? "30px" : "8px" }} 
+            }}
+            style={{ width: "100%", paddingRight: searchText ? "30px" : "8px" }}
           />
           {searchText && (
             <button
@@ -1708,10 +1723,10 @@ export default function TileViewer({
           </ul>
         )}
       </aside>
-      
+
       {/* Info Panel (Legacy - hidden by default) */}
       {process.env.NEXT_PUBLIC_ENABLE_LEGACY_UI === 'true' && (
-        <InfoPanel 
+        <InfoPanel
           isOpen={showInfoPanel}
           onClose={() => setShowInfoPanel(false)}
           feature={selectedFeature}
@@ -1719,7 +1734,7 @@ export default function TileViewer({
           aiDescription={aiDescription}
         />
       )}
-      
+
       {/* Search Suggestions */}
       {searchSuggestions.length > 0 && !showInfoPanel && (
         <div className="fixed top-24 right-4 w-80 bg-gray-900/95 backdrop-blur-xl rounded-lg border border-white/20 shadow-2xl z-40 p-4">

@@ -25,7 +25,7 @@ function ExplorerContent() {
     zoom?: number;
   }>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
+
   // Advanced settings state
   const [selectedDataset, setSelectedDataset] = useState<string>("default");
   const [splitViewEnabled, setSplitViewEnabled] = useState(false);
@@ -39,7 +39,7 @@ function ExplorerContent() {
     const storedSplitView = localStorage.getItem('pe_split_view');
     const storedSplitLayer = localStorage.getItem('pe_split_layer');
     const storedOsdToolbar = localStorage.getItem('pe_osd_toolbar');
-    
+
     if (storedAdvancedOpen === 'true') {
       setShowAdvanced(true);
     }
@@ -61,19 +61,19 @@ function ExplorerContent() {
   useEffect(() => {
     localStorage.setItem('pe_advanced_open', showAdvanced.toString());
   }, [showAdvanced]);
-  
+
   useEffect(() => {
     localStorage.setItem('pe_dataset', selectedDataset);
   }, [selectedDataset]);
-  
+
   useEffect(() => {
     localStorage.setItem('pe_split_view', splitViewEnabled.toString());
   }, [splitViewEnabled]);
-  
+
   useEffect(() => {
     localStorage.setItem('pe_split_layer', splitLayerId);
   }, [splitLayerId]);
-  
+
   useEffect(() => {
     localStorage.setItem('pe_osd_toolbar', osdToolbarVisible.toString());
   }, [osdToolbarVisible]);
@@ -84,25 +84,25 @@ function ExplorerContent() {
     const lat = searchParams.get('lat');
     const lon = searchParams.get('lon');
     const zoom = searchParams.get('zoom');
-    
+
     if (bodyParam) {
       setSelectedBody(bodyParam);
     }
-    
+
     setNavigationParams({
       body: bodyParam || undefined,
       lat: lat ? parseFloat(lat) : undefined,
       lon: lon ? parseFloat(lon) : undefined,
       zoom: zoom ? parseInt(zoom) : undefined,
     });
-    
+
     if (query !== null) {
       setSearchQuery(query);
       if (query.trim()) {
         performSearch(query.trim());
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const performSearch = async (query: string) => {
@@ -124,7 +124,7 @@ function ExplorerContent() {
         setSelectedBody(result.body);
         setSearchResult(result.feature);
         setShowResultCard(true);
-        
+
         const params = new URLSearchParams();
         params.append('search', query);
         params.append('body', result.body);
@@ -162,9 +162,7 @@ function ExplorerContent() {
   const handleBodyChange = (body: string) => {
     setSelectedBody(body);
     const params = new URLSearchParams();
-    if (searchQuery) {
-      params.append('search', searchQuery);
-    }
+    // Do not preserve search query when switching bodies
     params.append('body', body);
     router.push(`/explorer?${params.toString()}`);
   };
@@ -252,7 +250,7 @@ function ExplorerContent() {
               Feature Not Found
             </div>
             <p className="text-white/70 text-sm mb-4">
-              The requested feature could not be found in our dataset, or the request was not understood. 
+              The requested feature could not be found in our dataset, or the request was not understood.
               Please try refining your search or use a different query.
             </p>
             <button

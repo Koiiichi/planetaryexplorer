@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 class FeatureSearchEngine:
     def __init__(self):
         self.features = []
+        self.name_index = {}
         self.load_features()
     
     def load_features(self):
@@ -30,6 +31,15 @@ class FeatureSearchEngine:
             with open(features_file, 'r', encoding='utf-8') as f:
                 self.features = json.load(f)
             logger.info(f"Loaded {len(self.features)} planetary features from {features_file}")
+            
+            # Build name index (case-insensitive)
+            self.name_index = {}
+            for feature in self.features:
+                name = feature.get('name', '').lower()
+                if name:
+                    if name not in self.name_index:
+                        self.name_index[name] = []
+                    self.name_index[name].append(feature)
             
             # Log feature distribution by body
             body_counts = {}
@@ -52,22 +62,45 @@ class FeatureSearchEngine:
         if not self.features:
             return []
         
-        query_lower = query.lower()
+        query_lower = query.lower().strip()
         results = []
         
+        # 1. Exact Match Optimized Lookup
+        if query_lower in self.name_index:
+            exact_matches = self.name_index[query_lower]
+            for feature in exact_matches:
+                if body and feature.get('body', '').lower() != body.lower():
+                    continue
+                results.append({**feature, '_match_score': 100})
+            
+            # If we have enough exact matches, return immediately (fast path)
+            if len(results) >= limit:
+                 return results[:limit]
+
+        # 2. Linear Fallback (Partial Matches)
+        # Use set of IDs or Names to avoid duplicates if mixed with exact matches
+        seen_names = {r['name'] for r in results}
+        
         for feature in self.features:
+            # Skip if already found in exact match
+            if feature.get('name') in seen_names:
+                continue
+                
             score = 0
             
             # Filter by body if specified
             if body and feature.get('body', '').lower() != body.lower():
                 continue
             
-            # Exact name match (highest priority)
-            if query_lower == feature.get('name', '').lower():
-                score = 100
+            fname = feature.get('name', '').lower()
+            
             # Name contains query
-            elif query_lower in feature.get('name', '').lower():
-                score = 50
+            if query_lower in fname:
+                # Bonus for starts_with
+                if fname.startswith(query_lower):
+                    score = 75
+                else:
+                    score = 50
             # Keyword match
             elif any(query_lower in kw.lower() for kw in feature.get('keywords', [])):
                 score = 25
@@ -78,7 +111,7 @@ class FeatureSearchEngine:
             if score > 0:
                 results.append({**feature, '_match_score': score})
             
-            if len(results) >= limit * 3:  # Get more for sorting
+            if len(results) >= limit * 5:  # Get more for sorting
                 break
         
         # Sort by match score
@@ -210,33 +243,33 @@ async def search_features(query: str) -> Dict:
     # Format primary result
     primary = results[0]
     
-        return {
-            'found': True,
-            'body': primary.get('body'),
-            'center': {
-                'lat': primary.get('lat'),
-                'lon': primary.get('lon')
-            },
-            'feature': {
-                'name': primary.get('name'),
-                'category': primary.get('category'),
-                'diameter_km': primary.get('diameter_km'),
-                'origin': primary.get('origin')
-            },
-            'zoom': 6,
-            'layer': f"{primary.get('body')}_default",
-            'related_features': [
-                {
-                    'name': f.get('name'),
-                    'category': f.get('category'),
-                    'lat': f.get('lat'),
-                    'lon': f.get('lon')
-                }
-                for f in results[1:6]  # Next 5 results
-            ],
-            'total_results': len(results),
-            'provider': provider_used,
-            'search_time_ms': search_time * 1000
-        }
-        
-        logger.info(f"Search success: '{primary.get('name')}' on {primary.get('body')} via {provider_used} provider")
+    return {
+        'found': True,
+        'body': primary.get('body'),
+        'center': {
+            'lat': primary.get('lat'),
+            'lon': primary.get('lon')
+        },
+        'feature': {
+            'name': primary.get('name'),
+            'category': primary.get('category'),
+            'diameter_km': primary.get('diameter_km'),
+            'origin': primary.get('origin')
+        },
+        'zoom': 6,
+        'layer': f"{primary.get('body')}_default",
+        'related_features': [
+            {
+                'name': f.get('name'),
+                'category': f.get('category'),
+                'lat': f.get('lat'),
+                'lon': f.get('lon')
+            }
+            for f in results[1:6]  # Next 5 results
+        ],
+        'total_results': len(results),
+        'provider': provider_used,
+        'search_time_ms': search_time * 1000
+    }
+    
+    logger.info(f"Search success: '{primary.get('name')}' on {primary.get('body')} via {provider_used} provider")
